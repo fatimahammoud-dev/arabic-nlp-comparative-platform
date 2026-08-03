@@ -11,4 +11,5 @@ frontend/dist/
 # SinaTools large data file
 app/tools/sinatools/lemmas_dic.pickle
 Farasa_bin/farasapy-toolkit-bins-released/build/lib/farasa/farasa_bin/FarasaDiacritizeJar.jar
-Farasa_bin/farasapy-toolkit-bins-released/farasa/farasa_bin/FarasaDiacritizeJar.jar
+Farasa_bin/farasapy-toolkit-bins-released/farasa/farasa_bin/FarasaDiacritizeJar.jare
+**/FarasaDiacritizeJar.jar
