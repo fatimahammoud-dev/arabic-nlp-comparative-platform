@@ -3,10 +3,10 @@
     <section class="hero-band analyze-hero">
 
       <div class="hero-content">
-        <span class="eyebrow">Analyzer evidence laboratory</span>
-        <h1 class="hero-title">Inspect structured Arabic NLP evidence at token level.</h1>
+        <span class="eyebrow">Task-oriented analysis</span>
+        <h1 class="hero-title">Choose the Arabic NLP task first.</h1>
         <p class="hero-copy">
-          Run one analyzer for a capability-focused inspection or execute the combined path. Results preserve analyzer evidence and expose missing fields without inventing values.
+          Select the type of analysis you need. The platform runs the suitable tools in the background and shows only the relevant fields for that task.
         </p>
       </div>
     </section>
@@ -44,116 +44,52 @@
 
     <section class="panel panel-pad selector-panel">
       <div class="section-head">
-
         <div>
-          <h2 class="section-title">Tool Selector</h2>
-          <p class="section-subtitle">The list is driven by the shared tool config and live backend status.</p>
+          <h2 class="section-title">Choose Analysis Task</h2>
+          <p class="section-subtitle">The user chooses the task first; compatible tools run in the background.</p>
         </div>
       </div>
 
-      <div class="selector-grid">
+      <div class="selector-grid task-selector-grid">
         <button
-          class="selector-card all-tools"
-          :class="{ active: selectedTool === 'all' }"
+          v-for="task in taskOptions"
+          :key="task.key"
+          class="selector-card task-card"
+          :class="[`task-card--${task.key}`, { active: selectedTask === task.key }]"
           type="button"
-          @click="selectTool('all')"
+          @click="selectTask(task.key)"
         >
-          <span class="selector-dot selector-dot--neutral"></span>
+          <span class="selector-dot" :style="{ backgroundColor: task.color }"></span>
           <div class="selector-copy">
-            <span class="selector-label">All tools</span>
-            <span class="selector-subtitle">Combined analysis</span>
-          </div>
-        </button>
-
-        <button
-          v-for="tool in toolOptions"
-          :key="tool.key"
-          class="selector-card"
-          :class="{ active: selectedTool === tool.key }"
-          type="button"
-          @click="selectTool(tool.key)"
-        >
-          <span class="selector-dot" :style="{ backgroundColor: tool.color }"></span>
-          <div class="selector-copy">
-            <div class="selector-row">
-              <span class="selector-label">{{ tool.label }}</span>
-              <span v-if="statusBadge(tool.key).show" :class="['pill', statusBadge(tool.key).className]">
-                {{ statusBadge(tool.key).label }}
+            <span class="selector-label">{{ task.label }}</span>
+            <span class="selector-subtitle">{{ task.short }}</span>
+            <div class="task-tool-list">
+              <span v-for="toolKey in task.tools" :key="`${task.key}-${toolKey}`">
+                {{ TOOL_CONFIG[toolKey]?.label || toolKey }}
               </span>
             </div>
-            <span class="selector-subtitle">{{ toolRole(tool.key) }}</span>
           </div>
         </button>
-      </div>
-
-      <div v-if="selectionNotice" class="selection-notice" :class="selectionNotice.kind">
-        <strong>{{ selectionNotice.title }}</strong>
-        <p>{{ selectionNotice.message }}</p>
-        <div v-if="selectionNotice.pending" class="actions-row compact-actions">
-          <button class="btn btn-secondary" @click="confirmPendingSelection">Use tool anyway</button>
-          <button class="btn btn-subtle" @click="cancelPendingSelection">Cancel</button>
-        </div>
       </div>
     </section>
 
     <section class="selected-capability-panel">
       <div>
-        <span class="eyebrow">Selected analysis scope</span>
-        <h2>{{ selectedToolMeta.label }}</h2>
-        <p>{{ selectedCapability.description }}</p>
+        <span class="eyebrow">Selected task</span>
+        <h2>{{ selectedTaskMeta.label }}</h2>
+        <p>{{ selectedTaskMeta.description }}</p>
       </div>
       <div class="capability-tags">
-        <span v-for="feature in selectedCapability.features" :key="feature">{{ feature }}</span>
+        <span v-for="feature in selectedTaskMeta.fields" :key="feature">{{ fieldLabel(feature) }}</span>
       </div>
     </section>
 
     <section v-if="hasResults && !loading" class="analysis-summary-grid" aria-label="Analysis summary">
       <article class="analysis-summary-card"><span>Tokens analyzed</span><strong>{{ currentRows.length }}</strong></article>
-      <article class="analysis-summary-card"><span>Analysis scope</span><strong>{{ selectedTool === 'all' ? 'Combined' : selectedToolMeta.label }}</strong></article>
-      <article class="analysis-summary-card"><span>Average confidence</span><strong>{{ averageConfidenceLabel }}</strong></article>
+      <article class="analysis-summary-card"><span>Selected task</span><strong>{{ selectedTaskMeta.label }}</strong></article>
       <article class="analysis-summary-card"><span>Absent expected evidence</span><strong>{{ missingEvidenceCount }}</strong></article>
     </section>
 
-    <section v-if="hasResults && !loading" class="analysis-visual-grid">
-      <ScientificChart
-        type="line"
-        title="Token Confidence Timeline"
-        subtitle="Confidence by token position for the current analysis."
-        badge="Timeline"
-        :labels="tokenTimelineChart.labels"
-        :datasets="tokenTimelineChart.datasets"
-        :height="260"
-        aria-label="Token confidence timeline"
-        empty-title="No token timeline"
-        empty-text="The current result set does not include confidence scores."
-      />
-
-      <ScientificChart
-        type="bar"
-        title="POS Distribution"
-        subtitle="Distribution of part-of-speech labels in the current result."
-        badge="POS"
-        :labels="posDistributionChart.labels"
-        :datasets="posDistributionChart.datasets"
-        :height="260"
-        aria-label="POS distribution chart"
-        empty-title="No POS distribution"
-        empty-text="The current result set does not include POS labels."
-      />
-    </section>
-
-    <section v-if="hasResults && !loading" class="analysis-visual-grid analysis-visual-grid--wide">
-      <HeatmapMatrix
-        title="Expected Evidence Matrix"
-        subtitle="Presence of fields expected from the selected analyzer capability."
-        badge="Matrix"
-        :rows="heatmapRows"
-        :cols="heatmapCols"
-        :values="heatmapValues"
-        empty-title="No evidence matrix"
-        empty-text="The current run does not expose enough structured evidence to build a matrix."
-      />
-    </section>
 
     <div v-if="statusError && !toolStatusesLoaded" class="error-state">
       <div>
@@ -326,7 +262,7 @@
           </article>
         </div>
 
-        <div v-if="activeTab === 'fusion' && selectedTool === 'all'" class="tab-panel">
+        <div v-if="activeTab === 'fusion' && selectedTask === 'full'" class="tab-panel">
           <div class="section-head">
             <div>
               <h2 class="section-title">Fusion Output</h2>
@@ -432,9 +368,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import EmptyCell from '../components/tables/EmptyCell.vue'
-import ScientificChart from '../components/charts/ScientificChart.vue'
-import HeatmapMatrix from '../components/charts/HeatmapMatrix.vue'
-import { analyzeAll, analyzeTool, exportUrl, fusionText } from '../api/nlpApi'
+import { analyzeAll, exportUrl, fusionText } from '../api/nlpApi'
 import { TOOL_CONFIG, TOOL_KEYS, toolOrder } from '../config/tools'
 import { useToolStatus } from '../composables/useToolStatus'
 import { canonicalToken } from '../utils/tokenModel'
@@ -479,6 +413,78 @@ const toolOptions = computed(() =>
     ...TOOL_CONFIG[key],
   })),
 )
+const selectedTask = ref('morphology')
+
+const TASK_OPTIONS = [
+  {
+    key: 'morphology',
+    label: 'Morphological Analysis',
+    short: 'lemma, root, POS, gender, number, tense',
+    description: 'Shows morphological evidence only: lemma, root, POS, gender, number, and tense where supported.',
+    tools: ['camel', 'alkhalil', 'sinatools'],
+    fields: ['lemma', 'root', 'pos', 'gender', 'number', 'tense'],
+    color: 'var(--c-morphology-border)',
+  },
+  {
+    key: 'syntax',
+    label: 'Syntactic Analysis',
+    short: 'POS, head, dependency relation',
+    description: 'Shows syntax-oriented output from UD-style analyzers: POS, head, and dependency relation.',
+    tools: ['stanza', 'udpipe'],
+    fields: ['pos', 'head', 'deprel'],
+    color: 'var(--c-syntax-border)',
+  },
+  {
+    key: 'segmentation',
+    label: 'Segmentation',
+    short: 'Arabic token/clitic segmentation',
+    description: 'Shows segmentation only, using tools that expose token or clitic boundary evidence.',
+    tools: ['farasa', 'camel', 'stanza'],
+    fields: ['segmentation'],
+    color: 'var(--c-segment-border)',
+  },
+  {
+    key: 'pos',
+    label: 'POS Tagging',
+    short: 'part-of-speech labels only',
+    description: 'Compares POS labels only, without mixing lemma, root, or syntax details.',
+    tools: ['camel', 'stanza', 'udpipe', 'alkhalil', 'sinatools'],
+    fields: ['pos'],
+    color: 'var(--c-accent)',
+  },
+  {
+    key: 'lemma',
+    label: 'Lemmatization',
+    short: 'lemma only',
+    description: 'Shows lemma output only from compatible Arabic analyzers.',
+    tools: ['camel', 'qalsadi', 'stanza', 'alkhalil', 'sinatools'],
+    fields: ['lemma'],
+    color: 'var(--c-conf-high-border)',
+  },
+  {
+    key: 'root',
+    label: 'Root Extraction',
+    short: 'Arabic root only',
+    description: 'Shows Arabic root extraction only where the analyzer supports root evidence.',
+    tools: ['camel', 'alkhalil', 'sinatools'],
+    fields: ['root'],
+    color: 'var(--c-morphology-text)',
+  },
+  {
+    key: 'full',
+    label: 'Full Comparative Analysis',
+    short: 'all task evidence + fusion',
+    description: 'Shows all compatible tool evidence and enables expert fusion as a separate research view.',
+    tools: ['camel', 'farasa', 'stanza', 'udpipe', 'qalsadi', 'alkhalil', 'sinatools', 'arabert', 'madamira'],
+    fields: ['lemma', 'root', 'pos', 'segmentation', 'gender', 'number', 'tense', 'head', 'deprel'],
+    color: 'var(--c-text-primary)',
+  },
+]
+
+const taskOptions = TASK_OPTIONS
+const selectedTaskMeta = computed(() => TASK_OPTIONS.find((task) => task.key === selectedTask.value) || TASK_OPTIONS[0])
+const activeTaskTools = computed(() => selectedTaskMeta.value.tools.filter((key) => TOOL_CONFIG[key]))
+
 const TOOL_SECTION_DEFS = [
   {
     key: 'morphology',
@@ -514,16 +520,27 @@ const TOOL_SECTION_DEFS = [
   },
 ]
 
-const groupedToolSections = computed(() =>
-  TOOL_SECTION_DEFS
+const groupedToolSections = computed(() => {
+  if (selectedTask.value !== 'full') {
+    return [{
+      key: selectedTask.value,
+      kicker: 'Task-specific evidence',
+      title: selectedTaskMeta.value.label,
+      description: selectedTaskMeta.value.description,
+      tools: activeTaskTools.value.map((key) => ({ key, ...TOOL_CONFIG[key] })),
+      layout: 'layout-task',
+    }]
+  }
+
+  return TOOL_SECTION_DEFS
     .map((section) => ({
       ...section,
       tools: section.tools
         .filter((key) => TOOL_CONFIG[key])
         .map((key) => ({ key, ...TOOL_CONFIG[key] })),
     }))
-    .filter((section) => section.tools.length > 0),
-)
+    .filter((section) => section.tools.length > 0)
+})
 
 const toolStatusesLoaded = computed(() => Object.keys(toolStatuses.value).length > 0)
 const tokenEstimate = computed(() => (inputText.value.trim() ? inputText.value.trim().split(/\s+/).length : 0))
@@ -559,7 +576,7 @@ const csvExportHref = computed(() => (hasResults.value ? exportUrl(inputText.val
 const prettyJson = computed(() => JSON.stringify({ analysis: rawResults.value, fusion: fusionPayload.value }, null, 2))
 const fusionRows = computed(() => fusionPayload.value || [])
 const allToolRows = computed(() =>
-  TOOL_KEYS.flatMap((toolKey) =>
+  activeTaskTools.value.flatMap((toolKey) =>
     toolRows(toolKey).map((row) => ({
       ...row,
       tool: toolKey,
@@ -659,7 +676,7 @@ const toolContributionChart = computed(() => {
 })
 const tabs = computed(() => [
   { key: 'results', label: selectedTool.value === 'all' ? 'All tools' : 'Token breakdown' },
-  ...(selectedTool.value === 'all' ? [{ key: 'fusion', label: fusionLoading.value ? 'Fusion loading' : 'Fusion' }] : []),
+  ...(selectedTask.value === 'full' ? [{ key: 'fusion', label: fusionLoading.value ? 'Fusion loading' : 'Fusion' }] : []),
   { key: 'json', label: 'JSON' },
 ])
 
@@ -725,7 +742,13 @@ const TOOL_TABLE_COLUMNS = {
 
 function toolTableColumns(toolKey) {
   const columns = TOOL_TABLE_COLUMNS[toolKey] || []
+  const allowedFields = selectedTask.value === 'full'
+    ? selectedTaskMeta.value.fields
+    : selectedTaskMeta.value.fields
+
   return columns.filter((column) => {
+    if (column.virtual && selectedTask.value !== 'full') return false
+    if (!allowedFields.includes(column.key)) return false
     if (!column.optional) return true
     return toolRows(toolKey).some((row) => hasTokenValue(row.values?.[column.key]))
   })
@@ -850,6 +873,15 @@ function evidenceStatus(row) {
   return { label: `Partial ${present}/${expected.length}`, className: 'evidence-partial' }
 }
 
+function selectTask(taskKey) {
+  selectedTask.value = taskKey
+  selectedTool.value = 'all'
+  activeTab.value = 'results'
+  selectionNotice.value = null
+  pendingTool.value = ''
+  fusionPayload.value = null
+}
+
 function selectTool(toolKey) {
   selectionNotice.value = null
   pendingTool.value = ''
@@ -910,14 +942,11 @@ async function analyze() {
   copied.value = false
 
   try {
-    const data =
-      selectedTool.value === 'all'
-        ? await analyzeAll(inputText.value)
-        : await analyzeTool(selectedTool.value, inputText.value)
+    const data = await analyzeAll(inputText.value)
 
     if (currentRunId !== runId.value) return
     rawResults.value = data
-    if (selectedTool.value === 'all') {
+    if (selectedTask.value === 'full') {
       loadFusion(currentRunId)
     }
     captureRunSummary()
@@ -948,8 +977,9 @@ async function loadFusion(currentRunId = runId.value) {
 function toolRows(toolKey) {
   const payload = toolPayloadForKey(toolKey)
   const tokens = Array.isArray(payload?.tokens) ? payload.tokens : []
+  const allowedFields = selectedTaskMeta.value.fields
   const fields = (TOOL_TABLE_COLUMNS[toolKey] || [])
-    .filter((column) => !column.virtual)
+    .filter((column) => !column.virtual && allowedFields.includes(column.key))
     .map((column) => column.key)
 
   return tokens.map((token, index) => {
@@ -1267,6 +1297,7 @@ function clear() {
   selectionNotice.value = null
   pendingTool.value = ''
   selectedTool.value = 'all'
+  selectedTask.value = 'morphology'
   activeTab.value = 'results'
   lastRunSummary.value = ''
 }
@@ -1305,7 +1336,7 @@ function sourceForCurrentTool(field) {
 }
 
 function captureRunSummary() {
-  const toolLabel = selectedTool.value === 'all' ? 'All tools' : TOOL_CONFIG[selectedTool.value]?.label || selectedTool.value
+  const toolLabel = selectedTaskMeta.value.label
   const rows = currentRows.value
   const tokenCount = rows.length
   const avgConfidence = rows.length
@@ -1362,6 +1393,51 @@ function captureRunSummary() {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
+
+.task-selector-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.task-card {
+  min-width: 0;
+}
+
+.task-card .selector-copy,
+.task-card .selector-label,
+.task-card .selector-subtitle {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.task-tool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.task-tool-list span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--c-page-bg);
+  color: var(--c-text-secondary);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.capability-tool-grid.layout-task {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compact-evidence-table td,
+.compact-evidence-table th,
+.json-panel,
+.source-chip,
+.conflict-mini-card {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 
 .selector-card {
   display: flex;
@@ -1730,6 +1806,7 @@ function captureRunSummary() {
 .evidence-missing { color: #64748b; background: #f1f5f9; }
 
 @media (max-width: 1100px) {
+  .task-selector-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .analysis-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .selector-grid,
   .results-grid,
@@ -1741,6 +1818,7 @@ function captureRunSummary() {
 }
 
 @media (max-width: 720px) {
+  .task-selector-grid { grid-template-columns: 1fr; }
   .selected-capability-panel { align-items: flex-start; flex-direction: column; }
   .capability-tags { justify-content: flex-start; }
   .analysis-summary-grid { grid-template-columns: 1fr 1fr; }
@@ -2009,7 +2087,8 @@ function captureRunSummary() {
 .capability-tool-grid,
 .capability-tool-grid.layout-morphology,
 .capability-tool-grid.layout-syntax,
-.capability-tool-grid.layout-support {
+.capability-tool-grid.layout-support,
+.capability-tool-grid.layout-task {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   align-items: start;
 }
@@ -2087,7 +2166,8 @@ function captureRunSummary() {
   .capability-tool-grid.layout-morphology,
   .capability-tool-grid.layout-syntax,
   .capability-tool-grid.layout-support,
-  .capability-tool-grid.layout-contextual {
+  .capability-tool-grid.layout-contextual,
+  .capability-tool-grid.layout-task {
     grid-template-columns: 1fr !important;
   }
 }

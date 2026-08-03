@@ -2,16 +2,18 @@
   <div class="page-wrap home-page page-stack">
     <section class="hero-band dashboard-hero">
       <div class="hero-content">
-        <span class="eyebrow">Dashboard</span>
-        <h1 class="hero-title">Arabic NLP Research Workbench</h1>
+        <span class="eyebrow">Arabic NLP Platform</span>
+        <h1 class="hero-title">Understand Arabic text, one clear choice at a time.</h1>
         <p class="hero-copy">
-          A research workbench for analyzer evidence, capability-aware comparison, expert fusion, and evaluation.
-          Arabic is reserved for input and linguistic output, while the interface stays in English.
+          This platform is not just a collection of separate NLP tools. It is a guided workspace: you choose what
+          you want to learn about an Arabic sentence, the platform picks the right analyzers for that job, runs
+          them, and explains the result in plain language. Arabic is used for the input and the linguistic output;
+          the interface itself stays in English.
         </p>
         <div class="actions-row">
-          <RouterLink class="btn btn-primary" to="/smart">Open Fusion View</RouterLink>
-          <RouterLink class="btn btn-secondary" to="/compare">Compare Tools</RouterLink>
-          <RouterLink class="btn btn-subtle" to="/evaluate">View Evaluation</RouterLink>
+          <RouterLink class="btn btn-primary" to="/analyze">Start with Analyze</RouterLink>
+          <RouterLink class="btn btn-secondary" to="/smart">Open Fusion View</RouterLink>
+          <RouterLink class="btn btn-subtle" to="/compare">Compare Tools</RouterLink>
         </div>
       </div>
 
@@ -31,12 +33,57 @@
       </div>
     </section>
 
+    <section class="panel panel-pad explainer-panel">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">What this platform actually does</h2>
+          <p class="section-subtitle">A quick, plain-language overview plus the real workflow of the platform.</p>
+        </div>
+      </div>
+
+      <div class="explainer-grid">
+        <article class="explainer-card">
+          <span class="explainer-icon" aria-hidden="true">🎯</span>
+          <strong>It's a decision platform, not just a toolbox</strong>
+          <p>
+            Instead of asking you to pick between analyzers like CAMeL, Farasa, or Stanza, you tell the platform
+            what you want to know about an Arabic sentence. It chooses the right tools for that task on its own.
+          </p>
+        </article>
+        <article class="explainer-card">
+          <span class="explainer-icon" aria-hidden="true">👥</span>
+          <strong>Who it's for</strong>
+          <p>
+            Students, researchers, and anyone learning Arabic NLP who wants to see how different analyzers read the
+            same sentence, without needing to know the internals of every tool beforehand.
+          </p>
+        </article>
+        <article class="explainer-card">
+          <span class="explainer-icon" aria-hidden="true">🧭</span>
+          <strong>How to move through it</strong>
+          <p>
+            Start on <strong>Analyze</strong> to pick a task and see raw evidence, use <strong>Compare</strong> to
+            see where tools agree or disagree, and open <strong>Fusion</strong> for one clear, trusted answer per
+            word with the reasoning behind it.
+          </p>
+        </article>
+      </div>
+
+      <div class="workflow-grid workflow-grid--merged">
+        <article v-for="item in workflowItems" :key="item.title" class="capability-card">
+          <span class="capability-label">{{ item.step }}</span>
+          <strong>{{ item.title }}</strong>
+          <p>{{ item.note }}</p>
+        </article>
+      </div>
+    </section>
+
     <section class="dashboard-grid">
       <article class="panel panel-pad summary-panel">
         <div class="section-head">
           <div>
             <h2 class="section-title">Live Platform Summary</h2>
-            <p class="section-subtitle">Values update from backend health checks and a built-in evaluation sample sentence.</p>
+            <p class="section-subtitle">Values update from backend health checks. The cards stay in one readable row on desktop.</p>
           </div>
           <button class="btn btn-secondary" :disabled="statusLoading || evaluationSampleLoading" @click="refreshDashboard">
             {{ statusLoading || evaluationSampleLoading ? 'Refreshing...' : 'Refresh' }}
@@ -65,59 +112,14 @@
         </div>
       </article>
 
-      <aside class="panel panel-pad evaluation-sample-panel">
-        <div class="section-head">
-          <div>
-            <h2 class="section-title">Evaluation Sample Run</h2>
-            <p class="section-subtitle">{{ evaluationSampleLabel }}</p>
-          </div>
-        </div>
-
-        <div v-if="evaluationSampleLoading" class="loading-state evaluation-sample-loading">
-          <span class="spinner--dark" aria-hidden="true"></span>
-          <p>Running the reference sentence through fusion and evaluation...</p>
-        </div>
-
-        <div v-else class="evaluation-sample-stack">
-          <article class="metric-strip">
-            <div class="metric-strip-head">
-              <span class="metric-label">Core readiness</span>
-              <strong>{{ evaluationSample.agreement }}</strong>
-            </div>
-            <div class="progress-track"><span :style="{ width: evaluationSample.agreementWidth }"></span></div>
-          </article>
-
-          <article class="metric-strip">
-            <div class="metric-strip-head">
-              <span class="metric-label">Tool availability</span>
-              <strong>{{ evaluationSample.confidence }}</strong>
-            </div>
-            <div class="progress-track"><span :style="{ width: evaluationSample.confidenceWidth }"></span></div>
-          </article>
-
-          <article class="metric-strip">
-            <div class="metric-strip-head">
-              <span class="metric-label">Response time</span>
-              <strong>{{ evaluationSample.responseTime }}</strong>
-            </div>
-            <div class="progress-track"><span :style="{ width: evaluationSample.responseWidth }"></span></div>
-          </article>
-
-          <article class="metric-strip">
-            <span class="metric-label">Evaluation sample status</span>
-            <span :class="['pill', evaluationSample.statusClass]">{{ evaluationSample.status }}</span>
-            <p class="metrics-note">{{ evaluationSample.note }}</p>
-          </article>
-        </div>
-      </aside>
     </section>
 
     <section class="dashboard-grid dashboard-grid--secondary">
       <article class="panel panel-pad chart-panel">
         <div class="section-head">
           <div>
-            <h2 class="section-title">Tool Health</h2>
-            <p class="section-subtitle">Grouped by linguistic family.</p>
+            <h2 class="section-title">Total Tool Health</h2>
+            <p class="section-subtitle">Total tool health shown in one row by linguistic family.</p>
           </div>
         </div>
 
@@ -134,79 +136,9 @@
           </div>
         </div>
 
-        <svg class="mini-chart" viewBox="0 0 620 220" role="img" aria-label="Tool readiness chart">
-          <defs>
-            <linearGradient id="readinessGradient" x1="0%" x2="100%" y1="0%" y2="0%">
-              <stop offset="0%" stop-color="#4F46E5" />
-              <stop offset="100%" stop-color="#14B8A6" />
-            </linearGradient>
-          </defs>
-          <rect x="24" y="24" width="572" height="172" rx="22" fill="rgba(255,255,255,0.78)" stroke="rgba(148,163,184,0.22)" />
-          <g v-for="(bar, index) in readinessBars" :key="bar.label">
-            <rect :x="70 + index * 165" :y="160 - bar.height" width="86" :height="bar.height" rx="14" fill="url(#readinessGradient)" />
-            <text :x="113 + index * 165" y="184" text-anchor="middle" class="chart-label">{{ bar.label }}</text>
-            <text :x="113 + index * 165" :y="150 - bar.height" text-anchor="middle" class="chart-value">{{ bar.value }}</text>
-          </g>
-        </svg>
+       
       </article>
 
-      <article class="panel panel-pad capability-panel">
-        <div class="section-head">
-          <div>
-            <h2 class="section-title">Platform Capabilities</h2>
-            <p class="section-subtitle">The workflow follows analyzer evidence, comparison, expert fusion, and capability-aware evaluation.</p>
-          </div>
-        </div>
-
-        <div class="workflow-grid">
-          <article v-for="item in workflowItems" :key="item.title" class="capability-card">
-            <span class="capability-label">{{ item.step }}</span>
-            <strong>{{ item.title }}</strong>
-            <p>{{ item.note }}</p>
-          </article>
-        </div>
-      </article>
-    </section>
-
-    <section class="analysis-visual-grid">
-      <ScientificChart
-        type="doughnut"
-        title="Tool Availability Mix"
-        subtitle="Online versus offline or degraded tools."
-        badge="Live"
-        :labels="toolAvailabilityChart.labels"
-        :datasets="toolAvailabilityChart.datasets"
-        :height="260"
-        aria-label="Tool availability doughnut chart"
-        empty-title="Waiting for tool status"
-        empty-text="The chart will populate as soon as the backend status endpoint responds."
-      />
-
-      <ScientificChart
-        type="bar"
-        title="Evaluation Sample Snapshot"
-        subtitle="Core readiness, tool availability, and endpoint latency from the health snapshot."
-        badge="Evaluation sample"
-        :labels="evaluationSampleChart.labels"
-        :datasets="evaluationSampleChart.datasets"
-        :height="260"
-        aria-label="Evaluation sample snapshot bar chart"
-        empty-title="Waiting for evaluation sample data"
-        empty-text="Run the evaluation sample once to populate the research summary."
-      />
-
-      <ScientificChart
-        type="radar"
-        title="Analyzer participation by role"
-        subtitle="Morphology, syntax, and segmentation coverage."
-        badge="Coverage"
-        :labels="groupCoverageChart.labels"
-        :datasets="groupCoverageChart.datasets"
-        :height="280"
-        aria-label="Coverage radar chart"
-        empty-title="Waiting for coverage data"
-        empty-text="Coverage chart appears after the tool registry loads."
-      />
     </section>
 
     <section class="dashboard-grid dashboard-grid--tertiary">
@@ -316,7 +248,6 @@ import { getDemoToolHealth } from '@/api/nlpApi'
 import { TOOL_CONFIG, TOOL_KEYS } from '@/config/tools'
 import { useToolStatus } from '@/composables/useToolStatus'
 import { TOOL_GROUPS } from '@/constants/designTokens'
-import ScientificChart from '@/components/charts/ScientificChart.vue'
 import { readAnalysisHistory } from '@/utils/analysisHistory'
 import { statusDisplay, toolRole } from '@/utils/researchSemantics'
 
@@ -404,11 +335,6 @@ const groupHealth = computed(() =>
   }),
 )
 
-const readinessBars = computed(() => [
-  { label: 'Tools', value: `${activeToolCount.value}/${totalTools.value}`, height: Math.max(30, Math.round((activeToolCount.value / Math.max(totalTools.value, 1)) * 120)) },
-  { label: 'Tasks', value: `${supportedTasks.value}`, height: Math.max(30, Math.round(Math.min(1, supportedTasks.value / 12) * 120)) },
-  { label: 'Health', value: evaluationSampleMetrics.value.ok ? 'OK' : 'Booting', height: Math.max(30, Math.round((evaluationSampleMetrics.value.ok ? 1 : 0.4) * 120)) },
-])
 
 const metrics = computed(() => [
   {
@@ -1022,9 +948,105 @@ onUnmounted(() => {
   }
 }
 
+.explainer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.explainer-card {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  background: var(--c-page-bg);
+}
+
+.explainer-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.explainer-card strong {
+  color: var(--c-text-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.explainer-card p {
+  margin: 0;
+  color: var(--c-text-secondary);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .explainer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 720px) {
   .hero-panel {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Maryam final home edits: row layouts, no graph blocks, merged platform aim */
+.dashboard-grid,
+.dashboard-grid--secondary {
+  grid-template-columns: 1fr;
+}
+
+.summary-panel,
+.chart-panel {
+  width: 100%;
+}
+
+.summary-panel .kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-kpi {
+  min-height: 120px;
+}
+
+.group-bars {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 0;
+}
+
+.workflow-grid--merged {
+  margin-top: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.chart-panel .section-subtitle {
+  max-width: 780px;
+}
+
+@media (max-width: 1200px) {
+  .summary-panel .kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .workflow-grid--merged {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 850px) {
+  .summary-panel .kpi-grid,
+  .group-bars,
+  .workflow-grid--merged {
+    grid-template-columns: 1fr;
+  }
+}
+
 </style>
+

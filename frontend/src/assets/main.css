@@ -862,3 +862,457 @@ img,svg,canvas{max-width:100%}
   .table-scroll{max-width:100%}
   .desktop-tool-table{display:none!important}
 }
+
+
+/* =========================================================
+   GLOBAL RESPONSIVE SAFETY LAYER
+   Purpose: fix horizontal page scroll across all Vue views
+   without changing colors, typography, or visual theme.
+   ========================================================= */
+
+/* 1) Prevent the document itself from becoming wider than the screen */
+html,
+body,
+#app {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+@supports not (overflow-x: clip) {
+  html,
+  body,
+  #app {
+    overflow-x: hidden;
+  }
+}
+
+/* 2) Make every layout container respect the viewport */
+.page-wrap,
+.home-page,
+.dashboard-page,
+.smart-page,
+.compare-page,
+.evaluate-page,
+.analyze-page,
+.about-page,
+.reports-page {
+  width: min(1240px, calc(100% - 32px)) !important;
+  max-width: calc(100% - 32px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  overflow-x: clip !important;
+}
+
+/* 3) Fix the common reason of broken mobile layouts:
+      children inside CSS grid/flex refusing to shrink */
+.page-wrap *,
+.home-page *,
+.dashboard-page *,
+.smart-page *,
+.compare-page *,
+.evaluate-page *,
+.analyze-page *,
+.about-page *,
+.reports-page * {
+  min-width: 0;
+}
+
+/* 4) Keep media and charts inside their parent */
+img,
+svg,
+canvas,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 5) Cards/panels/tokens/tools should never push the page sideways */
+.panel,
+.panel-pad,
+.section-card,
+.hero-band,
+.kpi-card,
+summary-bar,
+.metric-strip,
+.token-card,
+.tool-card,
+.conflict-card,
+.fusion-card,
+.contrib-card,
+.service-card,
+.corpus-card,
+.quick-action-card,
+.capability-card,
+.explainer-card,
+.group-bar-card,
+.recent-card,
+.task-card,
+.feature-card,
+.candidate-feature-card,
+.raw-token-card,
+.raw-table-card {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* 6) Long labels, Arabic words, paths, tool reasons, and badges wrap safely */
+.hero-title,
+.hero-copy,
+.section-title,
+.section-subtitle,
+.kpi-label,
+.kpi-value,
+.kpi-note,
+.summary-label,
+.summary-value,
+.metric-label,
+.tool-code,
+.tool-reason,
+.feature-value,
+.arabic-value,
+.arabic-word,
+.token-word,
+.trace-value,
+.trace-support,
+.candidate-value,
+.recent-card p,
+.recent-summary,
+.service-card p,
+.corpus-card p,
+.quick-action-card span,
+.capability-card p,
+.explainer-card p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* 7) Buttons/chips were using nowrap. On small screens they must wrap. */
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-subtle,
+.btn-ghost,
+.pill,
+.pos-badge,
+.tool-badge,
+.conf-badge,
+.example-chip,
+.tool-chip,
+.source-chip,
+.morph-pill,
+.seg-pill,
+.dep-rel,
+.conflict-badge {
+  max-width: 100%;
+}
+
+/* 8) Tables must scroll INSIDE their own box, not stretch the whole page */
+.table-scroll,
+.raw-table-wrap,
+.compare-table-wrap,
+.capability-table-wrap,
+.evaluation-table-wrap,
+.matrix-table-wrap,
+.results-table-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll table,
+.raw-table-wrap table,
+.compare-table-wrap table,
+.capability-table-wrap table,
+.evaluation-table-wrap table,
+.matrix-table-wrap table,
+.results-table-wrap table {
+  width: max-content;
+  min-width: 100%;
+}
+
+/* 9) Dashboard/Home grids: rows on desktop, safe wrapping on tablets/phones */
+.dashboard-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px) !important;
+}
+
+.dashboard-grid,
+.dashboard-grid--secondary,
+.dashboard-grid--tertiary {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.summary-panel .kpi-grid,
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+  gap: 12px;
+}
+
+.group-bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
+  gap: 12px;
+}
+
+.explainer-grid,
+.workflow-grid,
+.workflow-grid--merged,
+.capability-grid,
+.service-grid,
+.corpus-list,
+.quick-actions-grid,
+.analysis-visual-grid,
+.fusion-participation-grid,
+.features-grid,
+.candidate-feature-grid,
+.contribution-grid,
+.tokens-grid,
+.task-selector-grid,
+.analysis-summary-grid,
+.comparison-summary-grid,
+.metrics-grid,
+.evaluation-grid {
+  max-width: 100% !important;
+}
+
+/* 10) Pages that set 96vw inside an already centered page create overflow.
+       Force them to use the parent width instead. */
+.smart-page,
+.compare-page,
+.evaluate-page,
+.analyze-page {
+  width: min(1240px, calc(100% - 32px)) !important;
+}
+
+/* 11) Medium screens */
+@media (max-width: 1100px) {
+  .page-wrap,
+  .home-page,
+  .dashboard-page,
+  .smart-page,
+  .compare-page,
+  .evaluate-page,
+  .analyze-page,
+  .about-page,
+  .reports-page {
+    width: min(100% - 24px, 1240px) !important;
+    max-width: calc(100% - 24px) !important;
+  }
+
+  .dashboard-hero,
+  .dashboard-grid,
+  .dashboard-grid--secondary,
+  .dashboard-grid--tertiary,
+  .fusion-method-grid,
+  .research-method-panel,
+  .comparison-layout,
+  .evaluate-layout,
+  .analyze-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .explainer-grid,
+  .workflow-grid,
+  .workflow-grid--merged,
+  .capability-grid,
+  .service-grid,
+  .corpus-list,
+  .quick-actions-grid,
+  .analysis-visual-grid,
+  .fusion-participation-grid,
+  .features-grid,
+  .candidate-feature-grid,
+  .contribution-grid,
+  .task-selector-grid,
+  .analysis-summary-grid,
+  .comparison-summary-grid,
+  .metrics-grid,
+  .evaluation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tokens-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* 12) Phone screens */
+@media (max-width: 760px) {
+  .page-wrap,
+  .home-page,
+  .dashboard-page,
+  .smart-page,
+  .compare-page,
+  .evaluate-page,
+  .analyze-page,
+  .about-page,
+  .reports-page {
+    width: min(100% - 16px, 1240px) !important;
+    max-width: calc(100% - 16px) !important;
+    padding-top: 14px;
+    padding-bottom: 42px;
+  }
+
+  .hero-band {
+    padding: 18px 14px !important;
+  }
+
+  .panel-pad,
+  .section-card,
+  .token-card,
+  .tool-card,
+  .fusion-card,
+  .conflict-card,
+  .service-card,
+  .corpus-card,
+  .quick-action-card,
+  .capability-card,
+  .explainer-card,
+  .group-bar-card,
+  .recent-card {
+    padding: 14px !important;
+  }
+
+  .section-head,
+  .service-card-head,
+  .recent-card-head,
+  .group-bar-head,
+  .metric-strip-head,
+  .candidate-panel-head,
+  .token-header,
+  .feature-label-row,
+  .candidate-feature-card header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .actions-row {
+    width: 100%;
+  }
+
+  .actions-row .btn,
+  .actions-row .btn-primary,
+  .actions-row .btn-secondary,
+  .actions-row .btn-subtle,
+  .actions-row .btn-ghost,
+  .input-row button,
+  .analyze-btn {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    white-space: normal !important;
+  }
+
+  .input-row,
+  .examples-row,
+  .tool-legend,
+  .morph-pills,
+  .seg-pills,
+  .dep-row,
+  .conflict-values {
+    width: 100%;
+    flex-wrap: wrap !important;
+  }
+
+  .arabic-input,
+  .textarea,
+  .text-input,
+  textarea,
+  input,
+  select {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .summary-panel .kpi-grid,
+  .kpi-grid,
+  .group-bars,
+  .explainer-grid,
+  .workflow-grid,
+  .workflow-grid--merged,
+  .capability-grid,
+  .service-grid,
+  .corpus-list,
+  .quick-actions-grid,
+  .analysis-visual-grid,
+  .fusion-participation-grid,
+  .features-grid,
+  .candidate-feature-grid,
+  .contribution-grid,
+  .task-selector-grid,
+  .analysis-summary-grid,
+  .comparison-summary-grid,
+  .metrics-grid,
+  .evaluation-grid,
+  .role-grid,
+  .expert-map {
+    grid-template-columns: 1fr !important;
+  }
+
+  .candidate-row,
+  .trace-row,
+  .agreement-row,
+  .evidence-row,
+  .metric-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pill,
+  .pos-badge,
+  .tool-badge,
+  .conf-badge,
+  .example-chip,
+  .tool-chip,
+  .source-chip,
+  .morph-pill,
+  .seg-pill,
+  .dep-rel,
+  .conflict-badge {
+    white-space: normal !important;
+    text-align: center;
+  }
+
+  th,
+  td {
+    white-space: normal;
+  }
+}
+
+/* 13) Very small phones */
+@media (max-width: 420px) {
+  .page-wrap,
+  .home-page,
+  .dashboard-page,
+  .smart-page,
+  .compare-page,
+  .evaluate-page,
+  .analyze-page,
+  .about-page,
+  .reports-page {
+    width: min(100% - 12px, 1240px) !important;
+    max-width: calc(100% - 12px) !important;
+  }
+
+  .hero-title {
+    max-width: 100% !important;
+    font-size: clamp(24px, 8.5vw, 34px);
+  }
+
+  .hero-copy,
+  .section-subtitle {
+    font-size: 13.5px;
+  }
+
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-subtle,
+  .btn-ghost {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}

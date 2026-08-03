@@ -6,7 +6,7 @@
         <h1 class="hero-title">Capability-based expert fusion, explained token by token.</h1>
         <p class="hero-copy">
           This view routes each linguistic feature to eligible analyzers, preserves the selected source,
-          and exposes supporting evidence, confidence, and conflicts for token-level inspection.
+          and exposes supporting evidence and conflicts for token-level inspection.
         </p>
       </div>
       <div class="tool-legend" aria-label="Tool color legend">
@@ -67,10 +67,6 @@
           <span class="summary-label">Conflicts</span>
           <strong class="conflict-count">{{ totalConflicts }}</strong>
         </div>
-        <div class="summary-item">
-          <span class="summary-label">Average confidence</span>
-          <strong>{{ averageConfidenceLabel }}</strong>
-        </div>
       </section>
 
       <section class="fusion-participation-grid" aria-label="Fusion tool participation">
@@ -99,212 +95,236 @@
             </div>
           </div>
         </article>
-        <ScientificChart
-          type="line"
-          title="Fusion Confidence by Token"
-          subtitle="Reported confidence for each fused token; confidence is not a correctness score."
-          badge="Token trace"
-          :labels="confidenceTimeline.labels"
-          :datasets="confidenceTimeline.datasets"
-          :height="300"
-          aria-label="Fusion confidence by token"
-          empty-title="No confidence trace"
-          empty-text="The fusion payload did not include token confidence scores."
-        />
-      </section>
+</section>
 
-      <section class="tokens-grid" aria-label="Token fusion cards">
-        <article
-          v-for="(token, idx) in fusionResult"
-          :key="`${token.word}-${idx}`"
-          class="token-card"
-          :class="{ 'has-conflicts': token.conflicts.length }"
-        >
-          <header class="token-header">
-            <div>
-              <div class="token-word arabic-word">{{ token.word }}</div>
-              <div class="token-meta">Selected source map and conflict trace</div>
-            </div>
-            <ConfidenceBadge :level="token.final.confidence_level" :score="token.final.confidence_score" />
-          </header>
-
-          <div class="features-grid">
-            <div class="feature-item">
-              <div class="feature-label-row">
-                <span class="feature-label">Lemma</span>
-                <ToolBadge :tool="sourceFor(token, 'lemma', 'camel')" />
-              </div>
-              <span v-if="hasValue(token.final.lemma)" class="feature-value arabic-value">{{ token.final.lemma }}</span>
-              <EmptyCell v-else />
-              <small class="source-line">{{ primarySourceLabel(token, 'lemma') }}</small>
-            </div>
-
-            <div class="feature-item">
-              <div class="feature-label-row">
-                <span class="feature-label">Root</span>
-                <ToolBadge :tool="sourceFor(token, 'root', 'camel')" />
-              </div>
-              <template v-if="hasValue(token.final.root)">
-                <span class="feature-value root-value ltr-value">{{ token.final.root }}</span>
-                <span v-if="token.final.root_type" class="root-type-badge">{{ rootTypeLabel(token.final.root_type) }}</span>
-              </template>
-              <EmptyCell v-else />
-              <small class="source-line">{{ primarySourceLabel(token, 'root') }}</small>
-            </div>
-
-            <div class="feature-item">
-              <div class="feature-label-row">
-                <span class="feature-label">POS</span>
-                <ToolBadge :tool="sourceFor(token, 'pos', 'camel')" />
-              </div>
-              <span v-if="hasValue(token.final.pos)" class="pos-badge ltr-value">
-                {{ POS_AR[token.final.pos] || token.final.pos }}
-              </span>
-              <EmptyCell v-else />
-              <small class="source-line">{{ primarySourceLabel(token, 'pos') }}</small>
-            </div>
-
-            <div v-if="hasValue(token.final.gloss)" class="feature-item">
-              <div class="feature-label-row">
-                <span class="feature-label">English gloss</span>
-                <ToolBadge :tool="sourceFor(token, 'gloss', 'camel')" />
-              </div>
-              <span class="gloss-value ltr-value">{{ token.final.gloss }}</span>
-            </div>
-
-            <div v-if="token.final.gender || token.final.number" class="feature-item">
-              <span class="feature-label">Gender and number</span>
-              <div class="morph-pills">
-                <span v-if="token.final.gender" class="morph-pill">{{ genderLabel(token.final.gender) }}</span>
-                <span v-if="token.final.number" class="morph-pill">{{ NUMBER_AR[token.final.number] || token.final.number }}</span>
-              </div>
-            </div>
-
-            <div v-if="token.final.tense" class="feature-item">
-              <span class="feature-label">Tense</span>
-              <span class="morph-pill">{{ TENSE_AR[token.final.tense] || token.final.tense }}</span>
-            </div>
-
-            <div v-if="token.final.case || token.final.definite || token.final.voice" class="feature-item">
-              <div class="feature-label-row">
-                <span class="feature-label">Case and definiteness</span>
-                <ToolBadge :tool="sourceFor(token, 'case', 'stanza')" />
-              </div>
-              <div class="morph-pills">
-                <span v-if="token.final.case" class="morph-pill stanza-pill">{{ CASE_AR[token.final.case] || token.final.case }}</span>
-                <span v-if="token.final.definite" class="morph-pill stanza-pill">{{ definiteLabel(token.final.definite) }}</span>
-                <span v-if="token.final.voice" class="morph-pill stanza-pill">{{ voiceLabel(token.final.voice) }}</span>
-              </div>
-            </div>
-
-            <div v-if="segmentationList(token).length" class="feature-item full-width">
-              <div class="feature-label-row">
-                <span class="feature-label">Segmentation</span>
-                <ToolBadge :tool="sourceFor(token, 'segmentation', 'farasa')" />
-              </div>
-              <div class="seg-pills">
-                <span v-for="(seg, si) in segmentationList(token)" :key="`${idx}-${si}`" class="seg-pill arabic-value">{{ seg }}</span>
-              </div>
-            </div>
-
-            <div v-if="dependencyLabel(token.final.dependency)" class="feature-item full-width">
-              <div class="feature-label-row">
-                <span class="feature-label">Dependency</span>
-                <ToolBadge :tool="sourceFor(token, 'dependency', 'stanza')" />
-              </div>
-              <div class="dep-row">
-                <span class="dep-rel">{{ dependencyLabel(token.final.dependency) }}</span>
-                <span v-if="token.final.dependency?.head_text" class="dep-head arabic-value">{{ token.final.dependency.head_text }}</span>
-              </div>
-            </div>
+      <section class="raw-results-panel" aria-label="Raw fusion results table">
+        <div class="raw-table-head">
+          <div>
+            <span class="feature-label">Raw token result</span>
+            <h2>One row per Arabic word</h2>
+            <p>
+              This table keeps the Fusion output readable: selected values stay visible, and source badges show
+              which analyzer provided each field.
+            </p>
           </div>
+        </div>
 
-          <section class="candidate-evidence-panel">
-            <div class="candidate-panel-head">
-              <div>
-                <span class="feature-label">Eligible analyzer evidence</span>
-                <p>Returned candidate values from feature-eligible tools. These values are evidence, not votes.</p>
-              </div>
-              <span class="candidate-note">selected source stays backend-defined</span>
-            </div>
+        <div class="raw-table-wrap">
+          <table class="fusion-raw-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Word</th>
+                <th>Lemma</th>
+                <th>Root</th>
+                <th>POS</th>
+                <th>Segmentation</th>
+                <th>Sources</th>
+                <th>Details</th>
+              </tr>
+            </thead>
 
-            <div class="candidate-feature-grid">
-              <article
-                v-for="feature in candidateFeatures"
-                :key="`${idx}-${feature}`"
-                class="candidate-feature-card"
-              >
-                <header>
-                  <strong>{{ featureLabel(feature) }}</strong>
-                  <ToolBadge :tool="sourceFor(token, feature, '')" />
-                </header>
+            <tbody>
+              <template v-for="(token, idx) in fusionResult" :key="`${token.word}-${idx}`">
+                <tr :class="{ 'has-conflicts': token.conflicts.length }">
+                  <td class="raw-index">{{ idx + 1 }}</td>
 
-                <div v-if="candidateEvidence(idx, feature).length" class="candidate-list">
-                  <div
-                    v-for="item in candidateEvidence(idx, feature)"
-                    :key="`${idx}-${feature}-${item.tool}`"
-                    class="candidate-row"
-                    :class="{ selected: sourceFor(token, feature, '') === item.tool }"
-                  >
-                    <ToolBadge :tool="item.tool" />
-                    <span
-                      class="candidate-value"
-                      :class="{ arabic: ['lemma', 'root', 'segmentation'].includes(feature) }"
-                      :dir="['lemma', 'root', 'segmentation'].includes(feature) ? 'rtl' : null"
-                      :lang="['lemma', 'root', 'segmentation'].includes(feature) ? 'ar' : null"
-                    >
-                      {{ item.value }}
+                  <td class="raw-word arabic-word" dir="rtl" lang="ar">
+                    {{ token.word }}
+                  </td>
+
+                  <td class="raw-arabic" dir="rtl" lang="ar">
+                    <span v-if="hasValue(token.final.lemma)">{{ token.final.lemma }}</span>
+                    <EmptyCell v-else />
+                  </td>
+
+                  <td class="raw-arabic" dir="rtl" lang="ar">
+                    <span v-if="hasValue(token.final.root)">{{ token.final.root }}</span>
+                    <EmptyCell v-else />
+                  </td>
+
+                  <td>
+                    <span v-if="hasValue(token.final.pos)" class="raw-pos">
+                      {{ POS_AR[token.final.pos] || token.final.pos }}
                     </span>
-                    <span v-if="item.score !== undefined" class="candidate-score">{{ item.score }}</span>
-                    <span v-if="sourceFor(token, feature, '') === item.tool" class="selected-chip">selected</span>
-                  </div>
-                </div>
+                    <EmptyCell v-else />
+                  </td>
 
-                <EmptyCell v-else label="No returned candidate evidence" />
-              </article>
-            </div>
-          </section>
+                  <td>
+                    <div v-if="segmentationList(token).length" class="raw-segments" dir="rtl" lang="ar">
+                      <span v-for="(seg, si) in segmentationList(token)" :key="`${idx}-seg-${si}`">{{ seg }}</span>
+                    </div>
+                    <EmptyCell v-else />
+                  </td>
 
-          <section class="decision-trace">
-            <button class="trace-toggle btn-ghost" type="button" @click="toggleTrace(idx)">
-              {{ showTrace[idx] ? 'Hide decision trace' : 'Show decision trace' }}
-            </button>
-              <div v-if="showTrace[idx]" class="trace-body">
-                <div v-for="row in traceRows(token)" :key="row.feature" class="trace-row">
-                  <span class="trace-feature">{{ featureLabel(row.feature) }}</span>
-                <ToolBadge v-if="traceSource(row)" :tool="traceSource(row)" />
-                <span class="trace-value">{{ traceValue(row) }}</span>
-                <small class="trace-support">
-                  <span v-if="row.expert">{{ row.expert }}</span>
-                  <span v-if="row.strategy">Strategy: {{ formatStrategy(row.strategy) }}</span>
-                  <span v-if="row.confidence_score !== undefined">Confidence score: {{ row.confidence_score }}</span>
-                  <span v-if="row.confidence_level">Confidence level: {{ row.confidence_level }}</span>
-                  <span v-if="row.score_margin !== undefined && row.score_margin !== null">Decision margin: {{ row.score_margin }}</span>
-                  <span v-if="row.ambiguity">Ambiguous evidence</span>
-                  <span v-if="Array.isArray(row.supporting_tools) && row.supporting_tools.length">Supporting: {{ row.supporting_tools.join(' / ') }}</span>
-                  <span v-if="Array.isArray(row.disagreeing_tools) && row.disagreeing_tools.length">Disagreeing: {{ row.disagreeing_tools.join(' / ') }}</span>
-                  <span v-if="row.note">{{ row.note }}</span>
-                </small>
-              </div>
-              <div v-if="!traceRows(token).length" class="null-value">Detailed decision trace was not returned for this feature.</div>
-            </div>
-          </section>
+                  <td>
+                    <div class="raw-source-map">
+                      <span v-if="sourceFor(token, 'lemma', '')">Lemma <ToolBadge :tool="sourceFor(token, 'lemma', '')" /></span>
+                      <span v-if="sourceFor(token, 'root', '')">Root <ToolBadge :tool="sourceFor(token, 'root', '')" /></span>
+                      <span v-if="sourceFor(token, 'pos', '')">POS <ToolBadge :tool="sourceFor(token, 'pos', '')" /></span>
+                      <span v-if="sourceFor(token, 'segmentation', '')">Seg <ToolBadge :tool="sourceFor(token, 'segmentation', '')" /></span>
+                    </div>
+                  </td>
 
-          <section v-if="token.conflicts.length" class="conflicts-section">
-            <div class="conflicts-header">
-              <span class="disagreement-badge">Disagreement</span>
-              <span>{{ token.conflicts.length }} items to inspect</span>
-            </div>
-            <div v-for="(conflict, cidx) in token.conflicts" :key="`${idx}-conf-${cidx}`" class="conflict-item">
-              <span class="conflict-feature-name">{{ featureLabel(conflict.feature) }}</span>
-              <div class="conflict-values">
-                <span class="conf-val"><ToolBadge :tool="conflict.tool_a" /> {{ displayValue(conflict.tool_a_value) }}</span>
-                <span class="vs-sep">/</span>
-                <span class="conf-val"><ToolBadge :tool="conflict.tool_b" /> {{ displayValue(conflict.tool_b_value) }}</span>
-              </div>
-            </div>
-          </section>
-        </article>
+                  <td>
+                    <button class="raw-details-btn" type="button" @click="toggleTrace(idx)">
+                      {{ showTrace[idx] ? 'Hide' : 'View' }}
+                    </button>
+                  </td>
+                </tr>
+
+                <tr v-if="showTrace[idx]" class="raw-details-row">
+                  <td colspan="8">
+                    <div class="raw-details-grid">
+                      <section class="raw-detail-block raw-extra-details-block">
+                        <span class="feature-label">Additional selected features</span>
+                        <p class="raw-extra-note">
+                          Extra linguistic values returned by the fusion output. Missing fields simply mean the backend did not return a usable value for this token.
+                        </p>
+
+                        <div class="raw-extra-details-grid">
+                          <article v-if="hasValue(token.final.gloss)" class="raw-extra-item">
+                            <strong>Gloss</strong>
+                            <span>{{ token.final.gloss }}</span>
+                          </article>
+
+                          <article v-if="token.final.gender" class="raw-extra-item">
+                            <strong>Gender</strong>
+                            <span>{{ genderLabel(token.final.gender) }}</span>
+                          </article>
+
+                          <article v-if="token.final.number" class="raw-extra-item">
+                            <strong>Number</strong>
+                            <span>{{ NUMBER_AR[token.final.number] || token.final.number }}</span>
+                          </article>
+
+                          <article v-if="token.final.tense" class="raw-extra-item">
+                            <strong>Tense</strong>
+                            <span>{{ TENSE_AR[token.final.tense] || token.final.tense }}</span>
+                          </article>
+
+                          <article v-if="token.final.case" class="raw-extra-item">
+                            <strong>Case</strong>
+                            <span>{{ CASE_AR[token.final.case] || token.final.case }}</span>
+                          </article>
+
+                          <article v-if="token.final.definite" class="raw-extra-item">
+                            <strong>Definiteness</strong>
+                            <span>{{ definiteLabel(token.final.definite) }}</span>
+                          </article>
+
+                          <article v-if="token.final.voice" class="raw-extra-item">
+                            <strong>Voice</strong>
+                            <span>{{ voiceLabel(token.final.voice) }}</span>
+                          </article>
+
+                          <article v-if="dependencyLabel(token.final.dependency)" class="raw-extra-item">
+                            <strong>Dependency</strong>
+                            <span>{{ dependencyLabel(token.final.dependency) }}</span>
+                          </article>
+
+                          <article v-if="segmentationList(token).length" class="raw-extra-item raw-extra-segmentation">
+                            <strong>Segmentation</strong>
+                            <div class="raw-extra-segments" dir="rtl" lang="ar">
+                              <span v-for="(seg, si) in segmentationList(token)" :key="`${idx}-extra-seg-${si}`">{{ seg }}</span>
+                            </div>
+                          </article>
+                        </div>
+
+                        <div
+                          v-if="!hasValue(token.final.gloss) && !token.final.gender && !token.final.number && !token.final.tense && !token.final.case && !token.final.definite && !token.final.voice && !dependencyLabel(token.final.dependency) && !segmentationList(token).length"
+                          class="null-value"
+                        >
+                          No additional selected features were returned for this token.
+                        </div>
+                      </section>
+
+                      <section class="raw-detail-block">
+                        <div class="candidate-panel-head">
+                          <div>
+                            <span class="feature-label">Eligible analyzer evidence</span>
+                            <p>Returned candidate values from feature-eligible tools. These values are evidence, not votes.</p>
+                          </div>
+                          <span class="candidate-note">selected source stays backend-defined</span>
+                        </div>
+
+                        <div class="candidate-feature-grid">
+                          <article
+                            v-for="feature in candidateFeatures"
+                            :key="`${idx}-${feature}`"
+                            class="candidate-feature-card"
+                          >
+                            <header>
+                              <strong>{{ featureLabel(feature) }}</strong>
+                              <ToolBadge :tool="sourceFor(token, feature, '')" />
+                            </header>
+
+                            <div v-if="candidateEvidence(idx, feature).length" class="candidate-list">
+                              <div
+                                v-for="item in candidateEvidence(idx, feature)"
+                                :key="`${idx}-${feature}-${item.tool}`"
+                                class="candidate-row"
+                                :class="{ selected: sourceFor(token, feature, '') === item.tool }"
+                              >
+                                <ToolBadge :tool="item.tool" />
+                                <span
+                                  class="candidate-value"
+                                  :class="{ arabic: ['lemma', 'root', 'segmentation'].includes(feature) }"
+                                  :dir="['lemma', 'root', 'segmentation'].includes(feature) ? 'rtl' : null"
+                                  :lang="['lemma', 'root', 'segmentation'].includes(feature) ? 'ar' : null"
+                                >
+                                  {{ item.value }}
+                                </span>
+                                <span v-if="sourceFor(token, feature, '') === item.tool" class="selected-chip">selected</span>
+                              </div>
+                            </div>
+
+                            <EmptyCell v-else label="No returned candidate evidence" />
+                          </article>
+                        </div>
+                      </section>
+
+                      <section class="raw-detail-block">
+                        <span class="feature-label">Decision trace</span>
+                        <div v-if="traceRows(token).length" class="trace-body raw-trace-body">
+                          <div v-for="row in traceRows(token)" :key="row.feature" class="trace-row">
+                            <span class="trace-feature">{{ featureLabel(row.feature) }}</span>
+                            <ToolBadge v-if="traceSource(row)" :tool="traceSource(row)" />
+                            <span class="trace-value">{{ traceValue(row) }}</span>
+                            <small class="trace-support">
+                              <span v-if="row.expert">{{ row.expert }}</span>
+                              <span v-if="row.strategy">Strategy: {{ formatStrategy(row.strategy) }}</span>
+                              <span v-if="row.ambiguity">Ambiguous evidence</span>
+                              <span v-if="Array.isArray(row.supporting_tools) && row.supporting_tools.length">Supporting: {{ row.supporting_tools.join(' / ') }}</span>
+                              <span v-if="Array.isArray(row.disagreeing_tools) && row.disagreeing_tools.length">Disagreeing: {{ row.disagreeing_tools.join(' / ') }}</span>
+                              <span v-if="row.note">{{ row.note }}</span>
+                            </small>
+                          </div>
+                        </div>
+                        <div v-else class="null-value">Detailed decision trace was not returned for this token.</div>
+
+                        <div v-if="token.conflicts.length" class="conflicts-section raw-conflicts">
+                          <div class="conflicts-header">
+                            <span class="disagreement-badge">Disagreement</span>
+                            <span>{{ token.conflicts.length }} items to inspect</span>
+                          </div>
+                          <div v-for="(conflict, cidx) in token.conflicts" :key="`${idx}-conf-${cidx}`" class="conflict-item">
+                            <span class="conflict-feature-name">{{ featureLabel(conflict.feature) }}</span>
+                            <div class="conflict-values">
+                              <span class="conf-val"><ToolBadge :tool="conflict.tool_a" /> {{ displayValue(conflict.tool_a_value) }}</span>
+                              <span class="vs-sep">/</span>
+                              <span class="conf-val"><ToolBadge :tool="conflict.tool_b" /> {{ displayValue(conflict.tool_b_value) }}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section v-if="contributionGroups.length" class="section-card contribution-section">
@@ -332,10 +352,8 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import ConfidenceBadge from '@/components/badges/ConfidenceBadge.vue'
 import EmptyCell from '@/components/tables/EmptyCell.vue'
 import ToolBadge from '@/components/badges/ToolBadge.vue'
-import ScientificChart from '@/components/charts/ScientificChart.vue'
 import { analyzeAll, fusionText } from '@/api/nlpApi'
 import { TOOL_COLORS, TOOL_GROUPS } from '@/constants/designTokens'
 import { recordAnalysis } from '@/utils/analysisHistory'
@@ -406,25 +424,6 @@ const DEPREL_AR = {
 const activeToolCount = computed(() => activeTools.value.length)
 const activeToolsLabel = computed(() => (activeTools.value.length ? activeTools.value.join(' / ') : 'No participating tools reported'))
 const totalConflicts = computed(() => fusionResult.value?.reduce((sum, token) => sum + token.conflicts.length, 0) || 0)
-const averageConfidenceLabel = computed(() => {
-  if (!fusionResult.value?.length) return '0%'
-  const scores = fusionResult.value
-    .map((token) => Number(token?.final?.confidence_score))
-    .filter((value) => Number.isFinite(value))
-  if (!scores.length) return '0%'
-  return `${Math.round((scores.reduce((sum, value) => sum + value, 0) / scores.length) * 100)}%`
-})
-const confidenceTimeline = computed(() => ({
-  labels: fusionResult.value?.map((_, index) => `${index + 1}`) || [],
-  datasets: [
-    {
-      label: 'Confidence %',
-      data: fusionResult.value?.map((row) => Math.round((Number(row?.final?.confidence_score) || 0) * 100)) || [],
-      borderColor: '#14B8A6',
-      backgroundColor: 'rgba(20, 184, 166, 0.16)',
-    },
-  ],
-}))
 const conflictSeverityChart = computed(() => {
   const counts = { high: 0, medium: 0, low: 0 }
   fusionResult.value?.forEach((token) => {
@@ -530,7 +529,7 @@ async function runSmartAnalysis() {
     recordAnalysis({
       page: 'Fusion',
       text: inputText.value.trim(),
-      summary: `${normalized.rows.length} tokens | ${totalConflicts.value} conflicts | ${averageConfidenceLabel.value} avg confidence`,
+      summary: `${normalized.rows.length} tokens | ${totalConflicts.value} conflicts`,
     })
   } catch (e) {
     if (currentRunId === runId.value) error.value = e?.response?.data?.detail || e?.message || 'Unable to reach the backend. Make sure FastAPI is running on localhost:8000.'
@@ -1516,15 +1515,6 @@ function voiceLabel(value) {
   color: var(--c-text-primary);
 }
 
-.candidate-score {
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: #fff;
-  border: 1px solid #d9e2ec;
-  color: #64748b;
-  font-size: 10px;
-  font-weight: 800;
-}
 
 .candidate-value.arabic {
   text-align: right;
@@ -1644,6 +1634,459 @@ function voiceLabel(value) {
   }
 
   .trace-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* RAW FUSION TABLE VIEW */
+.raw-results-panel {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background: var(--c-surface);
+}
+
+.raw-table-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.raw-table-head h2 {
+  margin: 4px 0 6px;
+  color: var(--c-text-primary);
+  font-size: 20px;
+}
+
+.raw-table-head p {
+  margin: 0;
+  color: var(--c-text-secondary);
+  line-height: 1.6;
+}
+
+.raw-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.fusion-raw-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+
+.fusion-raw-table th,
+.fusion-raw-table td {
+  padding: 12px;
+  border-bottom: 1px solid #edf2f7;
+  vertical-align: top;
+  text-align: left;
+}
+
+.fusion-raw-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: #64748b;
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.fusion-raw-table tr.has-conflicts td {
+  background: #fffaf2;
+}
+
+.raw-index {
+  width: 52px;
+  color: var(--c-text-muted);
+  font-weight: 800;
+}
+
+.raw-word {
+  min-width: 110px;
+  color: var(--c-text-primary);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.raw-arabic,
+.raw-pos {
+  color: var(--c-text-primary);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.raw-segments,
+.raw-source-map {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.raw-segments span {
+  padding: 4px 9px;
+  border: 1px solid #d9e2ec;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: var(--c-text-primary);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.raw-source-map span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border: 1px solid #e7edf3;
+  border-radius: 999px;
+  color: var(--c-text-secondary);
+  background: #fbfdff;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .035em;
+}
+
+.raw-details-btn {
+  padding: 7px 10px;
+  border: 1px solid var(--c-border);
+  border-radius: 9px;
+  color: var(--c-text-secondary);
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.raw-details-row td {
+  padding: 0;
+  background: #f8fafc !important;
+}
+
+.raw-details-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+  gap: 14px;
+  padding: 14px;
+}
+
+.raw-detail-block {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #d9e2ec;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.raw-trace-body {
+  margin-top: 10px;
+}
+
+.raw-conflicts {
+  margin-top: 12px;
+}
+
+.fusion-raw-table td,
+.raw-detail-block,
+.raw-detail-block * {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 900px) {
+  .raw-results-panel {
+    padding: 14px;
+  }
+
+  .raw-details-grid,
+  .candidate-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fusion-raw-table {
+    min-width: 860px;
+  }
+}
+
+@media (max-width: 560px) {
+  .raw-results-panel {
+    padding: 12px;
+  }
+
+  .fusion-raw-table {
+    min-width: 760px;
+  }
+
+  .fusion-raw-table th,
+  .fusion-raw-table td {
+    padding: 10px;
+  }
+}
+
+
+
+
+
+/* Maryam clean View/Hide details
+   Main table stays unchanged. Opened details are stacked rows, not side-by-side columns. */
+
+.raw-details-row td {
+  padding: 0 !important;
+  background: #f8fafc !important;
+}
+
+.raw-details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 12px 14px 14px;
+  align-items: start;
+}
+
+.raw-detail-block {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #d9e2ec;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.raw-extra-details-block {
+  display: grid;
+  gap: 9px;
+}
+
+.raw-extra-note {
+  margin: 0;
+  color: var(--c-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.raw-extra-details-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.raw-extra-item {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #e7edf3;
+  border-radius: 9px;
+  background: #fbfdff;
+}
+
+.raw-extra-item strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--c-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.raw-extra-item span {
+  display: block;
+  color: var(--c-text-primary);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.raw-extra-segmentation {
+  grid-column: span 2;
+}
+
+.raw-extra-segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.raw-extra-segments span {
+  width: fit-content;
+  padding: 4px 9px;
+  border: 1px solid #d9e2ec;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: var(--c-text-primary);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.candidate-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.candidate-panel-head p {
+  margin: 2px 0 0;
+  color: var(--c-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.candidate-note {
+  flex: 0 0 auto;
+  white-space: normal;
+  text-align: center;
+}
+
+.candidate-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.candidate-feature-card {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #d9e2ec;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.candidate-feature-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.candidate-list {
+  display: grid;
+  gap: 6px;
+}
+
+.candidate-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: center;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.candidate-row.selected {
+  border-color: #b8d3c8;
+  background: #f0f7f4;
+}
+
+.candidate-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--c-text-primary);
+}
+
+.candidate-value.arabic {
+  text-align: right;
+  font-size: 14px;
+}
+
+.selected-chip {
+  width: fit-content;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.raw-trace-body {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.raw-trace-body .trace-row {
+  display: grid;
+  grid-template-columns: 92px auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px dashed #e7edf3;
+}
+
+.raw-trace-body .trace-feature {
+  color: var(--c-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.raw-trace-body .trace-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  color: var(--c-text-primary);
+  font-weight: 700;
+}
+
+.raw-trace-body .trace-support {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  color: var(--c-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.raw-conflicts {
+  margin-top: 10px;
+}
+
+@media (max-width: 1100px) {
+  .candidate-feature-grid,
+  .raw-extra-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .raw-extra-segmentation {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 620px) {
+  .candidate-feature-grid,
+  .raw-extra-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .raw-extra-segmentation {
+    grid-column: auto;
+  }
+
+  .candidate-panel-head {
+    flex-direction: column;
+  }
+
+  .raw-trace-body .trace-row,
+  .candidate-row {
     grid-template-columns: 1fr;
   }
 }
